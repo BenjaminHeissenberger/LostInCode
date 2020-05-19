@@ -33,12 +33,31 @@ Benjamin Heissenberger
 
 * Function Login
 * Function Register
-* Function LocationIQ
+* Users on Database
 * Basic Function weather object
+* Wheater on Database connected with user
+* Function LocationIQ API
+* Function OpenWeatherMap API
+* Function DarkSky API
 * Function Preferences
 * Basic data representation
 * Detailed data representation
+* Settings
 
+## Testing
+
+* Testing Mainfunctions
+* Bug fixing: Mainfunctions 
+* improving Mainfunctions
+* API connections
+* Database connections
+
+## Finish
+
+* Final Test
+* Documents finished
+* Presentation
+* Release App
 
 # Programs
 
