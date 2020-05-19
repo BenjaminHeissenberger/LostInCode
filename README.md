@@ -59,6 +59,24 @@ Benjamin Heissenberger
 * Presentation
 * Release App
 
+# Time schedule
+
+**Task; Deadline**
+:-----:
+Project application; 19.05.
+get used to Firebase; 26.05
+Login / Register; 26.05
+Main Design; 26.05
+Weather Object; 02.06
+Finish UI; 02.06
+Weather on DB; 09.06
+APIs; 09.06
+Finishing Functions; 16.06
+Bugfixing; 16.06
+Improving Mainfunctions; 16.06
+Final Test; 23.06
+Presentation; 23.06
+
 # Programs
 
 * Android Studios
