@@ -67,3 +67,7 @@ Benjamin Heissenberger
 * Github
 * Google Docs
 * Adobe Color
+
+# Prototype
+
+Hier folgt ein [Link](https://www.figma.com/proto/MQI8Sbfax70np8hqffXL8s/Untitled?node-id=2%3A41&scaling=min-zoom "Optionaler Linktitel").
