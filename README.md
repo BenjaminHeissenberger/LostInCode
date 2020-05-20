@@ -1,4 +1,4 @@
-# LostInCode
+# WeatherApp
 
 
 
@@ -6,7 +6,7 @@
 Niklas Gruber
 Benjamin Heissenberger
 
-# Design
+
 
 
 # Tasks
