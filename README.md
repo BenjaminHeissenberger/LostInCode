@@ -1,5 +1,6 @@
 # WeatherApp
 
+is a weather app where you can see the current weather at your current location. You can also add the favorite places to see the weather from there. In addition, you can log in as a user to have your location available from every device.
 
 
 # Engineers
