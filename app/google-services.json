@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "880889925181",
+    "firebase_url": "https://lostincode-42069.firebaseio.com",
+    "project_id": "lostincode-42069",
+    "storage_bucket": "lostincode-42069.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:880889925181:android:ace24e443322f8dbe32454",
+        "android_client_info": {
+          "package_name": "at.htl.grieskirchen.weatherapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "880889925181-bapotnm2c5q2395er026ike1dq92652q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1mVCDYRwAitG5hoy_K-uAuc12kmYWycg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "880889925181-bapotnm2c5q2395er026ike1dq92652q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
