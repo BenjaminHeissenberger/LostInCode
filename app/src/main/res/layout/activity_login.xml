@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/AppTheme.Dark"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:background="@drawable/login_registerbackround"
     android:fitsSystemWindows="true">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="56dp"
+        android:orientation="vertical"
         android:paddingLeft="24dp"
+        android:paddingTop="56dp"
         android:paddingRight="24dp">
 
-        <ImageView android:src="@drawable/logo"
+        <ImageView android:src="@drawable/ic_sun"
             android:layout_width="wrap_content"
             android:layout_height="72dp"
             android:layout_marginBottom="24dp"
@@ -41,13 +43,14 @@
             android:layout_height="wrap_content"
             android:text="Button" />
 
-        <TextView android:id="@+id/link_signup"
+        <TextView
+            android:id="@+id/link_signup"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:text="No account yet? Create one"
             android:gravity="center"
-            android:textSize="16dip"/>
+            android:text="No account yet? Create one"
+            android:textSize="16dip" />
 
     </LinearLayout>
 </ScrollView>
