@@ -97,7 +97,6 @@ Presentation; 23.06
 | Design Login/Register   | 3     | 4    |
 | Firebase Init     | 1       | 0      |
 | Implement Login/Register     | 2       |  1     |
-
 | Design Main     | -1       | -1      |
 | Api implemetation     | -1       | -1      |
 | Bug fixing     | -1       | -1      |
