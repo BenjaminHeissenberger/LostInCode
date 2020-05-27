@@ -95,8 +95,8 @@ Presentation; 23.06
 | :---         |     :---:      |          ---: |
 | Github init   | 2     | 2    |
 | Design Login/Register   | 3     | 4    |
-| Firebase Init     | 1       | 0      |
-| Implement Login/Register     | 2       |  1     |
+| Firebase Init     | 1       | 2      |
+| Implement Login/Register     | 3       |  2     |
 | Design Main     | -1       | -1      |
 | Api implemetation     | -1       | -1      |
 | Bug fixing     | -1       | -1      |
