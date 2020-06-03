@@ -43,14 +43,14 @@ public class MainActivity extends AppCompatActivity {
 
         weatherList.add(new Weather("e","e","e","e","e","e","r",1,1, "w","w"));
         weatherTask wt = new weatherTask();
-        wt.execute();
-        try {
-            wt.get();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        wt.execute();
+//        try {
+//            wt.get();
+//        } catch (ExecutionException e) {
+//            e.printStackTrace();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         //sliderAdapter = new SliderAdapter(this);
 
         //mSlideViewPager.setAdapter(sliderAdapter);
