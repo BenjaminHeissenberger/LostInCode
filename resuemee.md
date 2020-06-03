@@ -16,3 +16,21 @@ Nächste Woche wird umgesetzt:
 * Main Design
 * Weather Objekt 
 * Weather Objekt speichern in DB
+
+## 03.06.2020
+
+Wie ist es uns ergangen?
+
+Eigentlich Gut
+
+Main design grundsätzlich fertig. Weather Objekt fertig. API Zugriff fast fertig.
+
+
+Probleme mit Login / API wegen Schulinternet.
+
+Wir sind etwas vor dem Zeitplan ugefähr halbe Woche (API)
+
+Nächste Woche wird umgesetzt:
+* Mehrere Standorte
+* API Zugriff
+* Login / Register mit Main verbinden
