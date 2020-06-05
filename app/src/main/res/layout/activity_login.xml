@@ -43,6 +43,16 @@
             android:layout_height="wrap_content"
             android:text="Button" />
 
+
+        <TextView
+            android:id="@+id/link_forgot_pw"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            android:text="Forgot password?"
+            android:textSize="16dip" />
+
         <TextView
             android:id="@+id/link_signup"
             android:layout_width="fill_parent"
