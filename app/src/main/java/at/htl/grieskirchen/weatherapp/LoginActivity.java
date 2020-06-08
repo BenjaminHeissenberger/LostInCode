@@ -66,7 +66,10 @@ public class LoginActivity extends AppCompatActivity {
         _forgot_pw.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(), ForgotPasswordActivity.class);
+                startActivity(intent);
 
+                overridePendingTransition(R.anim.push_left_in, R.anim.push_left_out);
             }
         });
     }
