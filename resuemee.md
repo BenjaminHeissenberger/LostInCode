@@ -34,3 +34,21 @@ Nächste Woche wird umgesetzt:
 * Mehrere Standorte
 * API Zugriff
 * Login / Register mit Main verbinden
+
+## 10.06.2020
+
+Wie ist es uns ergangen?
+
+Ohne grobe Probleme
+
+Main design fertig. Slide adapter und Slides fertig. API Zugriff fertig.
+Passwort reset fertig.
+
+Probleme mit virtuellen Android device.
+
+Wir sind etwas vor dem Zeitplan ugefähr halbe Woche
+
+Nächste Woche wird umgesetzt:
+* Preferences
+* Menue
+* Kalender Termin Wetter Warnungen
