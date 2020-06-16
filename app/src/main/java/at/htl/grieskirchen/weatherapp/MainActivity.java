@@ -2,6 +2,7 @@ package at.htl.grieskirchen.weatherapp;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.viewpager.widget.ViewPager;
 
 import com.androdocs.httprequest.HttpRequest;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.file.Watchable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -48,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout mDotLayout;
     private SliderAdapter sliderAdapter;
     private  String filename = "cities";
+
     private static MainActivity sInstance = null;
     TextView [] dots;
     @Override
@@ -58,11 +61,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         sInstance = this;
-        weatherList.add(new Weather("a","a","a","a","a","a","a",1,1,"a","a"));
-        weatherList.add(new Weather("b","b","b","b","b","b","b",2,2,"b","b"));
+        weatherList.add(new Weather("a","a","12.45","12.45","12.45","a","a",1,1,"a","a"));
+        weatherList.add(new Weather("b","b","12.45","12.45","12.45","b","b",2,2,"b","clear"));
 
-        weatherList.add(new Weather("e","e","e","e","e","e","r",1,1, "w","w"));
-        weatherTask wt = new weatherTask();
+        weatherList.add(new Weather("e","e","12.45","12.45","12.45","e","r",1,1, "w","w"));
+        final weatherTask wt = new weatherTask();
         wt.execute();
         try {
             wt.get();
@@ -86,6 +89,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageSelected(int position) {
                 dotIndicator(position);
+                LinearLayout ll = findViewById(R.id.linearlayout);
+                if(backround(weatherList.get(position))) {
+
+                    ll.setBackgroundResource(R.drawable.gradient_day_nice);
+                }
+                else{
+                    ll.setBackgroundResource(R.drawable.gradient_day_ugly);
+                }
+                if(weatherList.get(position).getSunset()-60*60*24 < java.time.Instant.now().getEpochSecond() && (weatherList.get(position).getSunrise()) > java.time.Instant.now().getEpochSecond()){
+                    ll.setBackgroundResource(R.drawable.gradient_night);
+                }
+
             }
 
             @Override
@@ -124,16 +139,16 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject weather = jsonObj.getJSONArray("weather").getJSONObject(0);
 
                 Long updatedAt = jsonObj.getLong("dt");
-                String updatedAtText = "Updated at: " + new SimpleDateFormat("dd/MM/yyyy hh:mm a", Locale.ENGLISH).format(new Date(updatedAt * 1000));
-                String temp = main.getString("temp") + "°C";
-                String tempMin = "Min Temp: " + main.getString("temp_min") + "°C";
-                String tempMax = "Max Temp: " + main.getString("temp_max") + "°C";
-                String pressure = main.getString("pressure");
-                String humidity = main.getString("humidity");
+                String updatedAtText = "Updated at: " + new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.GERMANY).format(new Date(updatedAt * 1000));
+                String temp = Math.round(Double.parseDouble(main.getString("temp"))) + "°C";
+                String tempMin = "Min Temp: " + Math.round(Double.parseDouble(main.getString("temp_min"))) + "°C";
+                String tempMax = "Max Temp: " + Math.round(Double.parseDouble(main.getString("temp_max"))) + "°C";
+                String pressure = main.getString("pressure")+ " hpa";
+                String humidity = main.getString("humidity")+ " %";
 
                 Long sunrise = sys.getLong("sunrise");
                 Long sunset = sys.getLong("sunset");
-                String windSpeed = wind.getString("speed");
+                String windSpeed = wind.getString("speed")+ " m/s";
                 String weatherDescription = weather.getString("description");
 
                 String address = jsonObj.getString("name") + ", " + sys.getString("country");
@@ -227,7 +242,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
     public String readin(){
-        String mFileContent = "0";
+        String mFileContent = "vienna,AT";
         try {
             FileInputStream fis = openFileInput(filename);
             BufferedReader in = new BufferedReader(new InputStreamReader(fis));
@@ -250,12 +265,20 @@ public class MainActivity extends AppCompatActivity {
             dots[i] =  new TextView(getApplicationContext());
             dots[i].setText(Html.fromHtml("&#8226"));
             dots[i].setTextSize(35);
-            dots[i].setTextColor(getResources().getColor(R.color.aluminum));
+            dots[i].setTextColor(getResources().getColor(R.color.base));
             mDotLayout.addView(dots[i]);
         }
 
         if(dots.length > 0){
             dots[position].setTextColor(getResources().getColor(R.color.white));
         }
+    }
+
+    public boolean backround(Weather w){
+        if(w.getWeatherDescription().contains("clear")||w.getWeatherDescription().contains("light")||w.getWeatherDescription().contains("few")||w.getWeatherDescription().contains("moderate")){
+            return true;
+        }
+            return false;
+
     }
 }

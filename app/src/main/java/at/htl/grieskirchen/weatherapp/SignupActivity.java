@@ -55,8 +55,11 @@ public class SignupActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Finish the registration screen and return to the Login activity
                 Intent intent = new Intent(getApplicationContext(),LoginActivity.class);
+
                 startActivity(intent);
+
                 finish();
+
                 overridePendingTransition(R.anim.push_left_in, R.anim.push_left_out);
             }
         });
@@ -67,6 +70,7 @@ public class SignupActivity extends AppCompatActivity {
         super.onStart();
         // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseUser currentUser = mAuth.getCurrentUser();
+
         updateUI(currentUser);
     }
 

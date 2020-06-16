@@ -62,9 +62,10 @@ public class SliderAdapter extends PagerAdapter {
         tempTxt.setText(list.get(position).getTemp());
         temp_minTxt.setText(list.get(position).getTempMin());
         temp_maxTxt.setText(list.get(position).getTempMax());
-        sunriseTxt.setText(new SimpleDateFormat("hh:mm").format(new Date(list.get(position).getSunrise() * 1000)));
-        sunsetTxt.setText(new SimpleDateFormat("hh:mm").format(new Date(list.get(position).getSunset() * 1000)));
-        windTxt.setText(list.get(position).getWindSpeed()+" m/s");
+
+        sunriseTxt.setText(new SimpleDateFormat("HH:mm",Locale.GERMANY).format(new Date(list.get(position).getSunrise()*1000)));
+        sunsetTxt.setText(new SimpleDateFormat("HH:mm", Locale.GERMANY).format(new Date(list.get(position).getSunset()*1000)));
+        windTxt.setText(list.get(position).getWindSpeed());
         pressureTxt.setText(list.get(position).getPressure());
         humidityTxt.setText(list.get(position).getHumidity());
         container.addView(view);

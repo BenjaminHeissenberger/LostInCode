@@ -3,7 +3,7 @@
     style="@style/AppTheme.Dark"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@drawable/login_registerbackround"
+    android:background="@drawable/main_backround"
     android:fitsSystemWindows="true">
 
     <LinearLayout

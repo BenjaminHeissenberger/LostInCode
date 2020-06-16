@@ -72,6 +72,11 @@ public class LoginActivity extends AppCompatActivity {
                 overridePendingTransition(R.anim.push_left_in, R.anim.push_left_out);
             }
         });
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+
+        if(currentUser!=null){
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+        }
     }
 
     @Override
@@ -114,18 +119,18 @@ public class LoginActivity extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "signInWithEmail:success");
-                            FirebaseUser user = mAuth.getCurrentUser();
+                            //FirebaseUser user = mAuth.getCurrentUser();
                             Toast.makeText(LoginActivity.this, "Authentication worked.",
                                     Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                            updateUI(user);
+                            //updateUI(user);
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "signInWithEmail:failure", task.getException());
                             Toast.makeText(LoginActivity.this, "Authentication failed.",
                                     Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(LoginActivity.this, LoginActivity.class));
-                            updateUI(null);
+                            //updateUI(null);
                             // ...
                         }
 
