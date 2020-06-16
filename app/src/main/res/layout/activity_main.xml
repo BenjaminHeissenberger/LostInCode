@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/main_backround"
+    android:background="@drawable/login_registerbackround"
     tools:context=".MainActivity"
     >
 
@@ -14,11 +14,11 @@
         android:layout_width="match_parent"
         android:layout_height="660dp">
     </androidx.viewpager.widget.ViewPager>
-<!--
+
     <LinearLayout
         android:id="@+id/dotsLayout"
         android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:layout_gravity="center"
-        android:orientation="horizontal"></LinearLayout>-->
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal"></LinearLayout>
 </LinearLayout>
