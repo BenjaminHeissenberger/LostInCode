@@ -52,3 +52,21 @@ Nächste Woche wird umgesetzt:
 * Preferences
 * Menue
 * Kalender Termin Wetter Warnungen
+
+## 17.06.2020
+
+Wie ist es uns ergangen?
+
+Durchaus technische Probleme. 
+
+Wollten einbauen dass man mit einer google map die Orte ändern kann hat nicht funktioniert.
+SlidePadges
+
+Probleme mit  maps. Benjamin sein Laptop ist kaputt
+
+Sonst sind wir im Zeitplan da wir jetzt eine Woche mehr Zeit haben
+
+Nächste Woche wird umgesetzt:
+* Fehlende funktionen einbauen
+* Bug fixen
+
