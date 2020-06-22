@@ -1,5 +1,6 @@
 package at.htl.grieskirchen.weatherapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -29,12 +30,17 @@ import java.util.concurrent.ExecutionException;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.text.Html;
 import android.text.InputType;
 import android.util.Log;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -44,13 +50,17 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "Main";
     public List<Weather>weatherList = new ArrayList<>();
-    String CITY = "vienna,at";
+    String CITY;
     String API = "6e7126dd0d4a9044c59cdc3013a08c0f";
     private ViewPager mSlideViewPager;
     private LinearLayout mDotLayout;
     private SliderAdapter sliderAdapter;
     private  String filename = "cities";
-
+    ImageButton btn_add;
+    private double newlot;
+    private double newlat;
+    public WeatherTask weatherTask = new WeatherTask();
+private ImageButton btn_settings;
     private static MainActivity sInstance = null;
     TextView [] dots;
     @Override
@@ -65,15 +75,7 @@ public class MainActivity extends AppCompatActivity {
         weatherList.add(new Weather("b","b","12.45","12.45","12.45","b","b",2,2,"b","clear"));
 
         weatherList.add(new Weather("e","e","12.45","12.45","12.45","e","r",1,1, "w","w"));
-        final weatherTask wt = new weatherTask();
-        wt.execute();
-        try {
-            wt.get();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
         sliderAdapter = new SliderAdapter(weatherList, this);
         mDotLayout = findViewById(R.id.dotsLayout);
         mSlideViewPager = findViewById(R.id.slideViewPager);
@@ -88,6 +90,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPageSelected(int position) {
+
+
                 dotIndicator(position);
                 LinearLayout ll = findViewById(R.id.linearlayout);
                 if(backround(weatherList.get(position))) {
@@ -103,15 +107,36 @@ public class MainActivity extends AppCompatActivity {
 
             }
 
+
             @Override
             public void onPageScrollStateChanged(int state) {
 
-            }});}
+            }});
+
+        btn_add = findViewById(R.id.btn_add);
+        btn_add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+            add();
+
+
+            }
+        });
+
+btn_settings.findViewById(R.id.btn_settings);
+btn_settings.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+
+    }
+});
+
+    }
 
     public static MainActivity getInstance() {
         return sInstance;
     }
-    class weatherTask extends AsyncTask<String, Void, String> {
+    class WeatherTask extends AsyncTask<String, Void, String> {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -123,7 +148,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         protected String doInBackground(String... args) {
-            String response = HttpRequest.excuteGet("https://api.openweathermap.org/data/2.5/weather?q=" + CITY + "&units=metric&appid=" + API);
+            String response = HttpRequest.excuteGet(
+                    "https://api.openweathermap.org/data/2.5/weather?lat=" + args[0] +  "&lon=" + args[1] + "&units=metric&appid=" + API);
             return response;
         }
 
@@ -151,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
                 String windSpeed = wind.getString("speed")+ " m/s";
                 String weatherDescription = weather.getString("description");
 
-                String address = jsonObj.getString("name") + ", " + sys.getString("country");
+                String address = CITY;
 //                addressTxt = findViewById(R.id.address);
 //                addressTxt.setOnClickListener(new View.OnClickListener() {
 //                    @Override
@@ -212,7 +238,12 @@ public class MainActivity extends AppCompatActivity {
 //                pressureTxt.setText(list.get(position).getPressure());
 //                humidityTxt.setText(list.get(position).getHumidity());
                weatherList.add(new Weather(address, updatedAtText, temp, tempMin, tempMax, pressure, humidity, sunrise, sunset,windSpeed, weatherDescription));
-                sliderAdapter.notifyDataSetChanged();
+                SliderAdapter sliderAdapter1 = new SliderAdapter(weatherList, MainActivity.this);
+                mSlideViewPager.setAdapter(sliderAdapter1);
+
+
+//                                    startActivity(getIntent());
+
                 /* Views populated, Hiding the loader, Showing the main design */
                 //findViewById(R.id.loader).setVisibility(View.GONE);
                 //findViewById(R.id.mainContainer).setVisibility(View.VISIBLE);
@@ -224,6 +255,10 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
+    }
+
+    private void aktuelisierdieduhuan() {
+
     }
 
     public void write(String input)
@@ -281,4 +316,72 @@ public class MainActivity extends AppCompatActivity {
             return false;
 
     }
+
+    public void add()
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.getInstance());
+                            builder.setTitle("Enter City");
+
+// Set up the input
+                            final EditText input = new EditText(MainActivity.getInstance());
+// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+                            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL);
+                            builder.setView(input);
+
+// Set up the buttons
+                            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    CITY = input.getText().toString();
+
+                                   GeoLocation geoLocation = new GeoLocation();
+                                   geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler() );
+
+
+                                    finish();
+                                    startActivity(getIntent());
+
+                                }
+                            });
+                            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.cancel();
+                                }
+                            });
+
+                            builder.show();
+
+    }
+
+
+    private class GeoHandler extends Handler {
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            String address;
+            switch (msg.what){
+                case 1:
+                    Bundle bundle = msg.getData();
+                    address = bundle.getString("adress");
+                    String[] latlon = address.split(";");
+                    newlat = Double.valueOf(latlon[0]);
+                    newlot = Double.valueOf(latlon[1]);
+
+                    weatherTask.execute(String.valueOf(newlat),String.valueOf(newlot));
+                    Log.d(TAG, "handleMessage: Lat" + newlat + " lot " + newlot  );
+
+
+
+                    break;
+
+                default:
+                    address = null;
+                            break;
+
+
+            }
+        }
+    }
+
+
 }
