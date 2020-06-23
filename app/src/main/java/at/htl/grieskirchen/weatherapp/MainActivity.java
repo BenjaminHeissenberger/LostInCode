@@ -23,9 +23,13 @@ import java.nio.file.Watchable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import android.content.DialogInterface;
 import android.os.AsyncTask;
@@ -45,6 +49,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
+
 public class MainActivity extends AppCompatActivity {
 
 
@@ -59,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
     ImageButton btn_add;
     private double newlot;
     private double newlat;
-    public WeatherTask weatherTask = new WeatherTask();
+    public WeatherTask weatherTask;
 private ImageButton btn_settings;
     private static MainActivity sInstance = null;
     TextView [] dots;
@@ -71,10 +78,7 @@ private ImageButton btn_settings;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         sInstance = this;
-        weatherList.add(new Weather("a","a","12.45","12.45","12.45","a","a",1,1,"a","a"));
-        weatherList.add(new Weather("b","b","12.45","12.45","12.45","b","b",2,2,"b","clear"));
 
-        weatherList.add(new Weather("e","e","12.45","12.45","12.45","e","r",1,1, "w","w"));
 
         sliderAdapter = new SliderAdapter(weatherList, this);
         mDotLayout = findViewById(R.id.dotsLayout);
@@ -107,7 +111,6 @@ private ImageButton btn_settings;
 
             }
 
-
             @Override
             public void onPageScrollStateChanged(int state) {
 
@@ -117,19 +120,20 @@ private ImageButton btn_settings;
         btn_add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
             add();
 
 
             }
         });
 
-btn_settings.findViewById(R.id.btn_settings);
-btn_settings.setOnClickListener(new View.OnClickListener() {
-    @Override
-    public void onClick(View v) {
-
-    }
-});
+//btn_settings.findViewById(R.id.btn_settings);
+//btn_settings.setOnClickListener(new View.OnClickListener() {
+//    @Override
+//    public void onClick(View v) {
+//
+//    }
+//});
 
     }
 
@@ -238,8 +242,8 @@ btn_settings.setOnClickListener(new View.OnClickListener() {
 //                pressureTxt.setText(list.get(position).getPressure());
 //                humidityTxt.setText(list.get(position).getHumidity());
                weatherList.add(new Weather(address, updatedAtText, temp, tempMin, tempMax, pressure, humidity, sunrise, sunset,windSpeed, weatherDescription));
-                SliderAdapter sliderAdapter1 = new SliderAdapter(weatherList, MainActivity.this);
-                mSlideViewPager.setAdapter(sliderAdapter1);
+
+                sliderAdapter.notifyDataSetChanged();
 
 
 //                                    startActivity(getIntent());
@@ -338,9 +342,6 @@ btn_settings.setOnClickListener(new View.OnClickListener() {
                                    geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler() );
 
 
-                                    finish();
-                                    startActivity(getIntent());
-
                                 }
                             });
                             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -366,7 +367,7 @@ btn_settings.setOnClickListener(new View.OnClickListener() {
                     String[] latlon = address.split(";");
                     newlat = Double.valueOf(latlon[0]);
                     newlot = Double.valueOf(latlon[1]);
-
+                    weatherTask = new WeatherTask();
                     weatherTask.execute(String.valueOf(newlat),String.valueOf(newlot));
                     Log.d(TAG, "handleMessage: Lat" + newlat + " lot " + newlot  );
 
