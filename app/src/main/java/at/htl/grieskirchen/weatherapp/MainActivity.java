@@ -3,6 +3,7 @@ package at.htl.grieskirchen.weatherapp;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.viewpager.widget.ViewPager;
 
@@ -19,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Watchable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,7 +34,12 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -48,6 +56,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toCollection;
@@ -60,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
     String CITY;
     String API = "6e7126dd0d4a9044c59cdc3013a08c0f";
     private ViewPager mSlideViewPager;
+    LocationManager locationManager;
+    private static final int RQ_ACCESS_FINE_LOCATION = 123;
     private LinearLayout mDotLayout;
     private SliderAdapter sliderAdapter;
     private  String filename = "cities";
@@ -78,6 +89,7 @@ private ImageButton btn_settings;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         sInstance = this;
+
 
 
         sliderAdapter = new SliderAdapter(weatherList, this);
@@ -136,7 +148,7 @@ private ImageButton btn_settings;
 
             }
         });
-
+        checkPermissionGPS();
 //btn_settings.findViewById(R.id.btn_settings);
 //btn_settings.setOnClickListener(new View.OnClickListener() {
 //    @Override
@@ -275,5 +287,63 @@ private ImageButton btn_settings;
         }
     }
 
+    private void checkPermissionGPS() {
+        Log.d(TAG, "checkPermissionGPS");
+        String permission = Manifest.permission.ACCESS_FINE_LOCATION;
+        if (ActivityCompat.checkSelfPermission(this, permission)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{ permission },
+                    RQ_ACCESS_FINE_LOCATION );
+        } else {
+            LocationManager locationManager = (LocationManager)
+                    getSystemService(Context.LOCATION_SERVICE);
+
+            Location location = locationManager.getLastKnownLocation(
+                    LocationManager.GPS_PROVIDER);
+            int i = 0;
+            double lon = location.getLongitude();
+            double lat = location.getLatitude();
+            String sJson = "";
+            LocationTask lt = new LocationTask();
+            lt.execute(String.valueOf(lat),String.valueOf(lon));
+            try {
+                String response = lt.get();
+                JSONObject jsonObject = new JSONObject(response);
+
+                try{CITY = jsonObject.getJSONObject("address").getString("city");}catch (Exception e){}
+                try{CITY = jsonObject.getJSONObject("address").getString("town");}catch (Exception e){}
+                try{CITY = jsonObject.getJSONObject("address").getString("village");}catch (Exception e){}
+
+                GeoLocation geoLocation = new GeoLocation();
+                geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler() );
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != RQ_ACCESS_FINE_LOCATION) return;
+        if (grantResults.length > 0 &&
+                grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this,"Permission ACCESS_FINE_LOCATION denied!",Toast.LENGTH_SHORT);
+        } else {
+            gpsGranted();
+        }
+    }
+
+    private void gpsGranted() {
+        checkPermissionGPS();
+    }
 
 }

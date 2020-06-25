@@ -10,6 +10,7 @@
         android:label="Weather"
         android:roundIcon="@drawable/ic_sun"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme">
         <activity android:name=".ForgotPasswordActivity"
             android:theme="@style/AppTheme.Dark"></activity>
