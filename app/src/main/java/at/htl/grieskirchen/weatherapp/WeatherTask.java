@@ -17,11 +17,15 @@ class WeatherTask extends AsyncTask<String, Void, String> {
     String API = "6e7126dd0d4a9044c59cdc3013a08c0f";
     SliderAdapter sliderAdapter;
     List<Weather>weatherList;
+    int isrefresh;
+    double lon;
+    double lat;
 
-    public WeatherTask(String CITY, SliderAdapter sliderAdapter, List<Weather> weatherList) {
+    public WeatherTask(String CITY, SliderAdapter sliderAdapter, List<Weather> weatherList, int isrefresh) {
         this.CITY = CITY;
         this.sliderAdapter = sliderAdapter;
         this.weatherList = weatherList;
+        this.isrefresh = isrefresh;
     }
 
     @Override
@@ -35,8 +39,15 @@ class WeatherTask extends AsyncTask<String, Void, String> {
     }
 
     protected String doInBackground(String... args) {
+        if(isrefresh > 0)
+        {
+      args[0] = String.valueOf(weatherList.get(isrefresh).getLat());
+            args[1] = String.valueOf(weatherList.get(isrefresh).getLon());
+        }
         String response = HttpRequest.excuteGet(
                 "https://api.openweathermap.org/data/2.5/weather?lat=" + args[0] +  "&lon=" + args[1] + "&units=metric&appid=" + API);
+       lat = Double.valueOf(args[1]);
+        lon = Double.valueOf(args[1]);
         return response;
     }
 
@@ -124,7 +135,16 @@ class WeatherTask extends AsyncTask<String, Void, String> {
 //                windTxt.setText(list.get(position).getWindSpeed());
 //                pressureTxt.setText(list.get(position).getPressure());
 //                humidityTxt.setText(list.get(position).getHumidity());
-            weatherList.add(new Weather(address, updatedAtText, temp, tempMin, tempMax, pressure, humidity, sunrise, sunset,windSpeed, weatherDescription));
+
+            if(isrefresh >= 0)
+            {
+                    weatherList.set(isrefresh, new Weather(address, updatedAtText, temp, tempMin, tempMax, pressure, humidity, sunrise, sunset,windSpeed, weatherDescription,lon,lat));
+            }
+            else
+            {
+                weatherList.add(new Weather(address, updatedAtText, temp, tempMin, tempMax, pressure, humidity, sunrise, sunset,windSpeed, weatherDescription,lon,lat ));
+
+            }
 
             sliderAdapter.notifyDataSetChanged();
 

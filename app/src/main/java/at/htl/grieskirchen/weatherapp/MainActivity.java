@@ -5,6 +5,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager.widget.ViewPager;
 
 import com.androdocs.httprequest.HttpRequest;
@@ -66,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "Main";
     public List<Weather>weatherList = new ArrayList<>();
+    SwipeRefreshLayout refreshLayout;
     String CITY;
     String API = "6e7126dd0d4a9044c59cdc3013a08c0f";
     private ViewPager mSlideViewPager;
@@ -143,7 +145,7 @@ private ImageButton btn_settings;
             @Override
             public void onClick(View v) {
 
-            add();
+            add(false);
 
 
             }
@@ -156,8 +158,48 @@ private ImageButton btn_settings;
 //
 //    }
 //});
+     //   Toolbar toolbar = findViewById(R.id.toolbar);
+   //     setSupportActionBar(toolbar);
+//       Button side_menu_Button = findViewById(R.id.main_side_button);
+//       side_menu_Button.setOnClickListener(view -> {
+//          ;
+//           Toast.makeText(MainActivity.getInstance(), "WIESO,", Toast.LENGTH_LONG ).show();
+//       });
 
-    }
+        ImageButton delete = findViewById(R.id.btn_delete);
+        delete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+if(weatherList.size() > 0){
+    weatherList.remove(mSlideViewPager.getCurrentItem());
+    sliderAdapter.notifyDataSetChanged();
+
+}
+                Log.d(TAG, "onClick: removed " + mSlideViewPager.getCurrentItem());
+            }
+        });
+
+        refreshLayout = findViewById(R.id.refreshLayout);
+        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+
+                if(weatherList.size() > 0 ) {
+                    weatherTask = new WeatherTask(weatherList.get(mSlideViewPager.getCurrentItem()).getAddress(),sliderAdapter,weatherList,mSlideViewPager.getCurrentItem());
+                    weatherTask.execute(String.valueOf(newlat),String.valueOf(newlot));
+
+                }
+
+
+                refreshLayout.setRefreshing(false);
+
+
+
+
+            }
+        });
+
+  }
 
     public static MainActivity getInstance() {
         return sInstance;
@@ -224,37 +266,39 @@ private ImageButton btn_settings;
 
     }
 
-    public void add()
+    public void add(boolean refresh)
     {
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.getInstance());
-                            builder.setTitle("Enter City");
+        if(refresh == false) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.getInstance());
+            builder.setTitle("Enter City");
 
 // Set up the input
-                            final EditText input = new EditText(MainActivity.getInstance());
+            final EditText input = new EditText(MainActivity.getInstance());
 // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
-                            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL);
-                            builder.setView(input);
+            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL);
+            builder.setView(input);
 
 // Set up the buttons
-                            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    CITY = input.getText().toString();
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    CITY = input.getText().toString();
 
-                                   GeoLocation geoLocation = new GeoLocation();
-                                   geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler() );
+                    GeoLocation geoLocation = new GeoLocation();
+                    geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler());
 
 
-                                }
-                            });
-                            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.cancel();
-                                }
-                            });
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
 
-                            builder.show();
+            builder.show();
+        }
 
     }
 
@@ -270,7 +314,7 @@ private ImageButton btn_settings;
                     String[] latlon = address.split(";");
                     newlat = Double.valueOf(latlon[0]);
                     newlot = Double.valueOf(latlon[1]);
-                    weatherTask = new WeatherTask(CITY,sliderAdapter,weatherList);
+                    weatherTask = new WeatherTask(CITY,sliderAdapter,weatherList,-1);
                     weatherTask.execute(String.valueOf(newlat),String.valueOf(newlot));
                     Log.d(TAG, "handleMessage: Lat" + newlat + " lot " + newlot  );
 
