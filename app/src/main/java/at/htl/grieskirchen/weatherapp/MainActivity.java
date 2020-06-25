@@ -89,14 +89,6 @@ private ImageButton btn_settings;
         mSlideViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-
-
-                dotIndicator(position);
                 LinearLayout ll = findViewById(R.id.linearlayout);
                 if(backround(weatherList.get(position))) {
 
@@ -108,6 +100,24 @@ private ImageButton btn_settings;
                 if(weatherList.get(position).getSunset()-60*60*24 < java.time.Instant.now().getEpochSecond() && (weatherList.get(position).getSunrise()) > java.time.Instant.now().getEpochSecond()){
                     ll.setBackgroundResource(R.drawable.gradient_night);
                 }
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                LinearLayout ll = findViewById(R.id.linearlayout);
+                if(backround(weatherList.get(position))) {
+
+                    ll.setBackgroundResource(R.drawable.gradient_day_nice);
+                }
+                else{
+                    ll.setBackgroundResource(R.drawable.gradient_day_ugly);
+                }
+                if(weatherList.get(position).getSunset()-60*60*24 < java.time.Instant.now().getEpochSecond() && (weatherList.get(position).getSunrise()) > java.time.Instant.now().getEpochSecond()){
+                    ll.setBackgroundResource(R.drawable.gradient_night);
+                }
+
+                dotIndicator(position);
+
 
             }
 
@@ -173,7 +183,7 @@ private ImageButton btn_settings;
                 String temp = Math.round(Double.parseDouble(main.getString("temp"))) + "°C";
                 String tempMin = "Min Temp: " + Math.round(Double.parseDouble(main.getString("temp_min"))) + "°C";
                 String tempMax = "Max Temp: " + Math.round(Double.parseDouble(main.getString("temp_max"))) + "°C";
-                String pressure = main.getString("pressure")+ " hpa";
+                String pressure = main.getString("pressure")+ " hPa";
                 String humidity = main.getString("humidity")+ " %";
 
                 Long sunrise = sys.getLong("sunrise");
