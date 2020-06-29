@@ -28,7 +28,8 @@ public class GeoLocation {
                     Address address = (Address) addressList.get(0);
                     StringBuilder stringBuilder = new StringBuilder();
                     stringBuilder.append(address.getLatitude()).append(";");
-                    stringBuilder.append(address.getLongitude()).append("");
+                    stringBuilder.append(address.getLongitude()).append(";");
+                    stringBuilder.append(locationAddress);
                     result = stringBuilder.toString();
                 }
 

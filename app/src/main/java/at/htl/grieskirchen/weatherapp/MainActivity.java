@@ -9,6 +9,13 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager.widget.ViewPager;
 
 import com.androdocs.httprequest.HttpRequest;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.gson.Gson;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -80,9 +87,13 @@ public class MainActivity extends AppCompatActivity {
     private double newlot;
     private double newlat;
     public WeatherTask weatherTask;
+    public List<WeatherPlacesPerUser>weatherPlacesPerUserList;
 private ImageButton btn_settings;
     private static MainActivity sInstance = null;
     TextView [] dots;
+    private FirebaseAuth mAuth;
+    private DatabaseReference mDatabase;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -91,33 +102,34 @@ private ImageButton btn_settings;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         sInstance = this;
+        mAuth = FirebaseAuth.getInstance();
 
-
+        mAuth.getCurrentUser().getUid();
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        mDatabase = database.getReference("WeatherPlaces");
 
         sliderAdapter = new SliderAdapter(weatherList, this);
         mDotLayout = findViewById(R.id.dotsLayout);
         mSlideViewPager = findViewById(R.id.slideViewPager);
         mSlideViewPager.setAdapter(sliderAdapter);
+        ImageButton delete = findViewById(R.id.btn_delete);
+        delete.setEnabled(false);
         dotIndicator(0);
 
+        weatherPlacesPerUserList = new ArrayList<WeatherPlacesPerUser>();
         mSlideViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                LinearLayout ll = findViewById(R.id.linearlayout);
-                if(backround(weatherList.get(position))) {
 
-                    ll.setBackgroundResource(R.drawable.gradient_day_nice);
-                }
-                else{
-                    ll.setBackgroundResource(R.drawable.gradient_day_ugly);
-                }
-                if(weatherList.get(position).getSunset()-60*60*24 < java.time.Instant.now().getEpochSecond() && (weatherList.get(position).getSunrise()) > java.time.Instant.now().getEpochSecond()){
-                    ll.setBackgroundResource(R.drawable.gradient_night);
-                }
             }
 
             @Override
             public void onPageSelected(int position) {
+                if(position == 0){
+                    delete.setEnabled(false);
+                }else {
+                    delete.setEnabled(true);
+                }
                 LinearLayout ll = findViewById(R.id.linearlayout);
                 if(backround(weatherList.get(position))) {
 
@@ -166,12 +178,19 @@ private ImageButton btn_settings;
 //           Toast.makeText(MainActivity.getInstance(), "WIESO,", Toast.LENGTH_LONG ).show();
 //       });
 
-        ImageButton delete = findViewById(R.id.btn_delete);
+
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 if(weatherList.size() > 0){
     weatherList.remove(mSlideViewPager.getCurrentItem());
+    WeatherPlacesPerUser weatherPlacesPerUser1 = weatherPlacesPerUserList.stream().filter(weatherPlacesPerUser -> mAuth.getCurrentUser().getUid().equals(weatherPlacesPerUser.getUid())).findFirst().orElse(null);
+    for (WeatherPlacesPerUser wppu:
+            weatherPlacesPerUserList) {
+        if(wppu.equals(weatherPlacesPerUser1)){
+            wppu.weatherplaces.remove(mSlideViewPager.getCurrentItem()-1);
+        }
+    }
     sliderAdapter.notifyDataSetChanged();
 
 }
@@ -185,7 +204,7 @@ if(weatherList.size() > 0){
             public void onRefresh() {
 
                 if(weatherList.size() > 0 ) {
-                    weatherTask = new WeatherTask(weatherList.get(mSlideViewPager.getCurrentItem()).getAddress(),sliderAdapter,weatherList,mSlideViewPager.getCurrentItem());
+                    weatherTask = new WeatherTask(weatherList.get(mSlideViewPager.getCurrentItem()).getAddress(),sliderAdapter,weatherList,mSlideViewPager.getCurrentItem(),weatherPlacesPerUserList);
                     weatherTask.execute(String.valueOf(newlat),String.valueOf(newlot));
 
                 }
@@ -198,8 +217,40 @@ if(weatherList.size() > 0){
 
             }
         });
+        mDatabase.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                weatherPlacesPerUserList.clear();
+                for(DataSnapshot dataSnapshot1: dataSnapshot.getChildren()){
+                    String json = dataSnapshot1.getValue(String.class);
+                    Gson gson = new Gson();
+                    WeatherPlacesPerUserListObject weatherPlacesPerUserListObject= gson.fromJson(json, WeatherPlacesPerUserListObject.class);
+                    weatherPlacesPerUserList = weatherPlacesPerUserListObject.getList();
+                }
+                if(weatherList.size()==1) {
+                    WeatherPlacesPerUser weatherPlacesPerUser1 = weatherPlacesPerUserList.stream().filter(weatherPlacesPerUser -> mAuth.getCurrentUser().getUid().equals(weatherPlacesPerUser.getUid())).findFirst().orElse(null);
+                    if (weatherPlacesPerUser1 != null) {
+                        for (String s : weatherPlacesPerUser1.getWeatherplaces()) {
+                            GeoLocation geoLocation = new GeoLocation();
+                            geoLocation.getAddress(s, getApplicationContext(), new GeoHandler());
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
 
   }
+    @Override
+    protected void onStop() {
+        // call the superclass method first
+        super.onStop();
+        writeListOnFirebase(weatherPlacesPerUserList,mAuth);
+    }
 
     public static MainActivity getInstance() {
         return sInstance;
@@ -259,7 +310,7 @@ if(weatherList.size() > 0){
     }
 
     public boolean backround(Weather w){
-        if(w.getWeatherDescription().contains("clear")||w.getWeatherDescription().contains("light")||w.getWeatherDescription().contains("few")||w.getWeatherDescription().contains("moderate")){
+        if(w.getWeatherDescription().contains("clear")||w.getWeatherDescription().contains("light")||w.getWeatherDescription().contains("few")||w.getWeatherDescription().contains("moderate")||w.getWeatherDescription().contains("scattered")){
             return true;
         }
             return false;
@@ -312,9 +363,31 @@ if(weatherList.size() > 0){
                     Bundle bundle = msg.getData();
                     address = bundle.getString("adress");
                     String[] latlon = address.split(";");
-                    newlat = Double.valueOf(latlon[0]);
-                    newlot = Double.valueOf(latlon[1]);
-                    weatherTask = new WeatherTask(CITY,sliderAdapter,weatherList,-1);
+                    newlat = Double.parseDouble(latlon[0]);
+                    newlot = Double.parseDouble(latlon[1]);
+                    String s = latlon[2];
+                    LocationTask lt = new LocationTask();
+                    lt.execute(String.valueOf(newlat),String.valueOf(newlot));
+
+//                    try {
+//                        String response = lt.get();
+//                        JSONObject jsonObject = new JSONObject(response);
+//                        try{s = jsonObject.getJSONObject("address").getString("suburb");}catch (Exception e){}
+//                        try{s = jsonObject.getJSONObject("address").getString("city");}catch (Exception e){}
+//                        try{s = jsonObject.getJSONObject("address").getString("town");}catch (Exception e){}
+//                        try{s = jsonObject.getJSONObject("address").getString("village");}catch (Exception e){}
+//
+//
+//                        GeoLocation geoLocation = new GeoLocation();
+//                      geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler() );
+//                    } catch (ExecutionException e) {
+//                        e.printStackTrace();
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    } catch (JSONException e) {
+//                        e.printStackTrace();
+//                    }
+                    weatherTask = new WeatherTask(s,sliderAdapter,weatherList,-1, weatherPlacesPerUserList);
                     weatherTask.execute(String.valueOf(newlat),String.valueOf(newlot));
                     Log.d(TAG, "handleMessage: Lat" + newlat + " lot " + newlot  );
 
@@ -390,4 +463,11 @@ if(weatherList.size() > 0){
         checkPermissionGPS();
     }
 
+
+    public void writeListOnFirebase(List<WeatherPlacesPerUser>list, FirebaseAuth firebaseAuth){
+
+        Gson gson = new Gson();
+        WeatherPlacesPerUserListObject wppulo= new WeatherPlacesPerUserListObject(list);
+        mDatabase.child("1").setValue(gson.toJson(wppulo));
+    }
 }

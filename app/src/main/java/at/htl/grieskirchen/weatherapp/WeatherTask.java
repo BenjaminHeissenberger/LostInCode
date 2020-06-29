@@ -3,11 +3,13 @@ package at.htl.grieskirchen.weatherapp;
 import android.os.AsyncTask;
 
 import com.androdocs.httprequest.HttpRequest;
+import com.google.firebase.auth.FirebaseAuth;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -17,15 +19,17 @@ class WeatherTask extends AsyncTask<String, Void, String> {
     String API = "6e7126dd0d4a9044c59cdc3013a08c0f";
     SliderAdapter sliderAdapter;
     List<Weather>weatherList;
+    List<WeatherPlacesPerUser>weatherPlacesPerUserList;
     int isrefresh;
     double lon;
     double lat;
 
-    public WeatherTask(String CITY, SliderAdapter sliderAdapter, List<Weather> weatherList, int isrefresh) {
+    public WeatherTask(String CITY, SliderAdapter sliderAdapter, List<Weather> weatherList, int isrefresh,List<WeatherPlacesPerUser>weatherPlacesPerUserList) {
         this.CITY = CITY;
         this.sliderAdapter = sliderAdapter;
         this.weatherList = weatherList;
         this.isrefresh = isrefresh;
+        this.weatherPlacesPerUserList = weatherPlacesPerUserList;
     }
 
     @Override
@@ -143,7 +147,23 @@ class WeatherTask extends AsyncTask<String, Void, String> {
             else
             {
                 weatherList.add(new Weather(address, updatedAtText, temp, tempMin, tempMax, pressure, humidity, sunrise, sunset,windSpeed, weatherDescription,lon,lat ));
-
+                if(weatherList.size()>1){
+                    FirebaseAuth mauth = FirebaseAuth.getInstance();
+                    WeatherPlacesPerUser weatherPlacesPerUser1 = weatherPlacesPerUserList.stream().filter(weatherPlacesPerUser -> mauth.getCurrentUser().getUid().equals(weatherPlacesPerUser.getUid())).findFirst().orElse(null);
+                    if(weatherPlacesPerUser1 == null){
+                        List<String>list = new ArrayList<>();
+                        list.add(address);
+                        weatherPlacesPerUserList.add(new WeatherPlacesPerUser(mauth.getCurrentUser().getUid(), list));
+                    }else {
+                        for (WeatherPlacesPerUser wppu:
+                             weatherPlacesPerUserList) {
+                            if(wppu.equals(weatherPlacesPerUser1)){
+                                if(!wppu.weatherplaces.contains(address)){
+                                wppu.weatherplaces.add(address);}
+                            }
+                        }
+                    }
+                }
             }
 
             sliderAdapter.notifyDataSetChanged();
