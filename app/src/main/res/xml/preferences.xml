@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <SwitchPreference
+        android:id="@+id/settings_stay_login"
+        android:defaultValue="true"
+        android:key="settings_stay_login"
+        android:summary="Sorgt dafür das SIE immer angemeldet bleiben"
+        android:title="Angemeldet bleiben" />
+
+
+</PreferenceScreen>

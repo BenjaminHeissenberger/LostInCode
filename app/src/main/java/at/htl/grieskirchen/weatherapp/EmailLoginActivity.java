@@ -2,7 +2,9 @@ package at.htl.grieskirchen.weatherapp;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -13,7 +15,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.firebase.ui.auth.AuthUI;
+
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -30,8 +34,8 @@ public class EmailLoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final int REQUEST_SIGNUP = 0;
     private FirebaseAuth mAuth;
-
-
+    private SharedPreferences prefs;
+    private GoogleApiClient mGoogleApiClient;
     @BindView(R.id.input_email) EditText _emailText;
     @BindView(R.id.input_password) EditText _passwordText;
     @BindView(R.id.btn_login) Button _loginButton;
@@ -45,7 +49,7 @@ public class EmailLoginActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         mAuth = FirebaseAuth.getInstance();
-
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
 
         _loginButton.setOnClickListener(new View.OnClickListener() {
@@ -68,6 +72,8 @@ public class EmailLoginActivity extends AppCompatActivity {
             }
         });
 
+
+
         _forgot_pw.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -79,10 +85,14 @@ public class EmailLoginActivity extends AppCompatActivity {
         });
         FirebaseUser currentUser = mAuth.getCurrentUser();
 
-        if(currentUser!=null){
-            startActivity(new Intent(EmailLoginActivity.this, MainActivity.class));
-           finish();
+        if(prefs.getBoolean("settings_stay_login",true))
+        {
+            if(currentUser!=null){
+                startActivity(new Intent(EmailLoginActivity.this, MainActivity.class));
+                finish();
+            }
         }
+
     }
 
     @Override

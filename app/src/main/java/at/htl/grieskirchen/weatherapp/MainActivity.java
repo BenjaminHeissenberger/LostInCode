@@ -83,15 +83,17 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout mDotLayout;
     private SliderAdapter sliderAdapter;
     private  String filename = "cities";
+    ImageButton btn_add;
+    private double newlot;
+    private double newlat;
+    public WeatherTask weatherTask;
+    public List<WeatherPlacesPerUser>weatherPlacesPerUserList;
+private ImageButton btn_settings;
+    private static MainActivity sInstance = null;
+    TextView [] dots;
     private FirebaseAuth mAuth;
     private DatabaseReference mDatabase;
-    private static MainActivity sInstance = null;
-    private List<WeatherPlacesPerUser>weatherPlacesPerUserList;
-    private ImageButton btn_add;
-    WeatherTask weatherTask;
-    double newlat;
-    double newlot;
-    TextView [] dots;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -105,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
         mAuth.getCurrentUser().getUid();
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         mDatabase = database.getReference("WeatherPlaces");
-        btn_add = findViewById(R.id.btn_add);
+
         sliderAdapter = new SliderAdapter(weatherList, this);
         mDotLayout = findViewById(R.id.dotsLayout);
         mSlideViewPager = findViewById(R.id.slideViewPager);
@@ -151,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
                     ll.setBackgroundResource(R.drawable.gradient_night);
                 }
 
+                dotIndicator(position);
 
 
             }
@@ -165,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                add(false);
+            add(false);
 
 
             }

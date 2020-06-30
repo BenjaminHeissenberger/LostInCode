@@ -1,6 +1,10 @@
 package at.htl.grieskirchen.weatherapp;
 
+import android.app.Notification;
 import android.os.AsyncTask;
+
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.androdocs.httprequest.HttpRequest;
 import com.google.firebase.auth.FirebaseAuth;
@@ -23,6 +27,8 @@ class WeatherTask extends AsyncTask<String, Void, String> {
     int isrefresh;
     double lon;
     double lat;
+    private NotificationManagerCompat notificationManager;
+    private static final String CHANNEL_ID = "Weather";
 
     public WeatherTask(String CITY, SliderAdapter sliderAdapter, List<Weather> weatherList, int isrefresh,List<WeatherPlacesPerUser>weatherPlacesPerUserList) {
         this.CITY = CITY;
@@ -35,7 +41,7 @@ class WeatherTask extends AsyncTask<String, Void, String> {
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
-
+        notificationManager = NotificationManagerCompat.from(MainActivity.getInstance());
         /* Showing the ProgressBar, Making the main design GONE */
         //findViewById(R.id.loader).setVisibility(View.VISIBLE);
         //findViewById(R.id.mainContainer).setVisibility(View.GONE);
@@ -165,6 +171,14 @@ class WeatherTask extends AsyncTask<String, Void, String> {
                     }
                 }
             }
+
+            Notification notification = new NotificationCompat.Builder(MainActivity.getInstance(),CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_sun)
+                    .setContentTitle("Weather")
+                    .setContentText("It is " + String.valueOf(weatherList.get(0).getTemp()) + "  °C hot")
+                    .build();
+
+            notificationManager.notify(1, notification);
 
             sliderAdapter.notifyDataSetChanged();
 
