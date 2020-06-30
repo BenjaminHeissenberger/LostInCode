@@ -496,8 +496,8 @@ public class MainActivity extends AppCompatActivity {
             Location location = locationManager.getLastKnownLocation(
                     LocationManager.GPS_PROVIDER);
             int i = 0;
-            double lon = location.getLongitude();
-            double lat = location.getLatitude();
+            double lon = 5;
+            double lat = 6;
             String sJson = "";
             LocationTask lt = new LocationTask();
             lt.execute(String.valueOf(lat), String.valueOf(lon));
