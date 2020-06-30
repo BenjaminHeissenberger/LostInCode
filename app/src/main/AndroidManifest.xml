@@ -3,18 +3,19 @@
     package="at.htl.grieskirchen.weatherapp">
 
     <uses-permission android:name="android.permission.INTERNET" />
-
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_sun"
         android:label="Weather"
         android:roundIcon="@drawable/ic_sun"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme">
         <activity android:name=".ForgotPasswordActivity"
             android:theme="@style/AppTheme.Dark"></activity>
         <activity
-            android:name=".LoginActivity"
+            android:name=".EmailLoginActivity"
             android:theme="@style/AppTheme.Dark">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -52,7 +52,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                         }else{
                             Toast.makeText(ForgotPasswordActivity.this, "Email not registerd", Toast.LENGTH_LONG);
                         }
-                        Intent intent = new Intent(getApplicationContext(),LoginActivity.class);
+                        Intent intent = new Intent(getApplicationContext(), EmailLoginActivity.class);
                         startActivity(intent);
                         finish();
                         overridePendingTransition(R.anim.push_left_in, R.anim.push_left_out);

@@ -1,11 +1,21 @@
 package at.htl.grieskirchen.weatherapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager.widget.ViewPager;
 
 import com.androdocs.httprequest.HttpRequest;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.gson.Gson;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,41 +28,72 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Watchable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.text.Html;
 import android.text.InputType;
 import android.util.Log;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
 
 public class MainActivity extends AppCompatActivity {
 
 
     private static final String TAG = "Main";
     public List<Weather>weatherList = new ArrayList<>();
-    String CITY = "vienna,at";
+    SwipeRefreshLayout refreshLayout;
+    String CITY;
     String API = "6e7126dd0d4a9044c59cdc3013a08c0f";
     private ViewPager mSlideViewPager;
+    LocationManager locationManager;
+    private static final int RQ_ACCESS_FINE_LOCATION = 123;
     private LinearLayout mDotLayout;
     private SliderAdapter sliderAdapter;
     private  String filename = "cities";
-
+    ImageButton btn_add;
+    private double newlot;
+    private double newlat;
+    public WeatherTask weatherTask;
+    public List<WeatherPlacesPerUser>weatherPlacesPerUserList;
+private ImageButton btn_settings;
     private static MainActivity sInstance = null;
     TextView [] dots;
+    private FirebaseAuth mAuth;
+    private DatabaseReference mDatabase;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -61,25 +102,21 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         sInstance = this;
-        weatherList.add(new Weather("a","a","12.45","12.45","12.45","a","a",1,1,"a","a"));
-        weatherList.add(new Weather("b","b","12.45","12.45","12.45","b","b",2,2,"b","clear"));
+        mAuth = FirebaseAuth.getInstance();
 
-        weatherList.add(new Weather("e","e","12.45","12.45","12.45","e","r",1,1, "w","w"));
-        final weatherTask wt = new weatherTask();
-        wt.execute();
-        try {
-            wt.get();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        mAuth.getCurrentUser().getUid();
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        mDatabase = database.getReference("WeatherPlaces");
+
         sliderAdapter = new SliderAdapter(weatherList, this);
         mDotLayout = findViewById(R.id.dotsLayout);
         mSlideViewPager = findViewById(R.id.slideViewPager);
         mSlideViewPager.setAdapter(sliderAdapter);
+        ImageButton delete = findViewById(R.id.btn_delete);
+        delete.setEnabled(false);
         dotIndicator(0);
 
+        weatherPlacesPerUserList = new ArrayList<WeatherPlacesPerUser>();
         mSlideViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -88,7 +125,11 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPageSelected(int position) {
-                dotIndicator(position);
+                if(position == 0){
+                    delete.setEnabled(false);
+                }else {
+                    delete.setEnabled(true);
+                }
                 LinearLayout ll = findViewById(R.id.linearlayout);
                 if(backround(weatherList.get(position))) {
 
@@ -101,129 +142,123 @@ public class MainActivity extends AppCompatActivity {
                     ll.setBackgroundResource(R.drawable.gradient_night);
                 }
 
+                dotIndicator(position);
+
+
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
 
-            }});}
+            }});
+
+        btn_add = findViewById(R.id.btn_add);
+        btn_add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            add(false);
+
+
+            }
+        });
+        checkPermissionGPS();
+//btn_settings.findViewById(R.id.btn_settings);
+//btn_settings.setOnClickListener(new View.OnClickListener() {
+//    @Override
+//    public void onClick(View v) {
+//
+//    }
+//});
+     //   Toolbar toolbar = findViewById(R.id.toolbar);
+   //     setSupportActionBar(toolbar);
+//       Button side_menu_Button = findViewById(R.id.main_side_button);
+//       side_menu_Button.setOnClickListener(view -> {
+//          ;
+//           Toast.makeText(MainActivity.getInstance(), "WIESO,", Toast.LENGTH_LONG ).show();
+//       });
+
+
+        delete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+if(weatherList.size() > 0){
+    weatherList.remove(mSlideViewPager.getCurrentItem());
+    WeatherPlacesPerUser weatherPlacesPerUser1 = weatherPlacesPerUserList.stream().filter(weatherPlacesPerUser -> mAuth.getCurrentUser().getUid().equals(weatherPlacesPerUser.getUid())).findFirst().orElse(null);
+    for (WeatherPlacesPerUser wppu:
+            weatherPlacesPerUserList) {
+        if(wppu.equals(weatherPlacesPerUser1)){
+            wppu.weatherplaces.remove(mSlideViewPager.getCurrentItem()-1);
+        }
+    }
+    sliderAdapter.notifyDataSetChanged();
+
+}
+                Log.d(TAG, "onClick: removed " + mSlideViewPager.getCurrentItem());
+            }
+        });
+
+        refreshLayout = findViewById(R.id.refreshLayout);
+        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+
+                if(weatherList.size() > 0 ) {
+                    weatherTask = new WeatherTask(weatherList.get(mSlideViewPager.getCurrentItem()).getAddress(),sliderAdapter,weatherList,mSlideViewPager.getCurrentItem(),weatherPlacesPerUserList);
+                    weatherTask.execute(String.valueOf(newlat),String.valueOf(newlot));
+
+                }
+
+
+                refreshLayout.setRefreshing(false);
+
+
+
+
+            }
+        });
+        mDatabase.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                weatherPlacesPerUserList.clear();
+                for(DataSnapshot dataSnapshot1: dataSnapshot.getChildren()){
+                    String json = dataSnapshot1.getValue(String.class);
+                    Gson gson = new Gson();
+                    WeatherPlacesPerUserListObject weatherPlacesPerUserListObject= gson.fromJson(json, WeatherPlacesPerUserListObject.class);
+                    weatherPlacesPerUserList = weatherPlacesPerUserListObject.getList();
+                }
+                if(weatherList.size()==1) {
+                    WeatherPlacesPerUser weatherPlacesPerUser1 = weatherPlacesPerUserList.stream().filter(weatherPlacesPerUser -> mAuth.getCurrentUser().getUid().equals(weatherPlacesPerUser.getUid())).findFirst().orElse(null);
+                    if (weatherPlacesPerUser1 != null) {
+                        for (String s : weatherPlacesPerUser1.getWeatherplaces()) {
+                            GeoLocation geoLocation = new GeoLocation();
+                            geoLocation.getAddress(s, getApplicationContext(), new GeoHandler());
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+  }
+    @Override
+    protected void onStop() {
+        // call the superclass method first
+        super.onStop();
+        writeListOnFirebase(weatherPlacesPerUserList,mAuth);
+    }
 
     public static MainActivity getInstance() {
         return sInstance;
     }
-    class weatherTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            /* Showing the ProgressBar, Making the main design GONE */
-            //findViewById(R.id.loader).setVisibility(View.VISIBLE);
-            //findViewById(R.id.mainContainer).setVisibility(View.GONE);
-            //findViewById(R.id.errorText).setVisibility(View.GONE);
-        }
-
-        protected String doInBackground(String... args) {
-            String response = HttpRequest.excuteGet("https://api.openweathermap.org/data/2.5/weather?q=" + CITY + "&units=metric&appid=" + API);
-            return response;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
 
 
-            try {
-                JSONObject jsonObj = new JSONObject(result);
-                JSONObject main = jsonObj.getJSONObject("main");
-                JSONObject sys = jsonObj.getJSONObject("sys");
-                JSONObject wind = jsonObj.getJSONObject("wind");
-                JSONObject weather = jsonObj.getJSONArray("weather").getJSONObject(0);
+    private void aktuelisierdieduhuan() {
 
-                Long updatedAt = jsonObj.getLong("dt");
-                String updatedAtText = "Updated at: " + new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.GERMANY).format(new Date(updatedAt * 1000));
-                String temp = Math.round(Double.parseDouble(main.getString("temp"))) + "°C";
-                String tempMin = "Min Temp: " + Math.round(Double.parseDouble(main.getString("temp_min"))) + "°C";
-                String tempMax = "Max Temp: " + Math.round(Double.parseDouble(main.getString("temp_max"))) + "°C";
-                String pressure = main.getString("pressure")+ " hpa";
-                String humidity = main.getString("humidity")+ " %";
-
-                Long sunrise = sys.getLong("sunrise");
-                Long sunset = sys.getLong("sunset");
-                String windSpeed = wind.getString("speed")+ " m/s";
-                String weatherDescription = weather.getString("description");
-
-                String address = jsonObj.getString("name") + ", " + sys.getString("country");
-//                addressTxt = findViewById(R.id.address);
-//                addressTxt.setOnClickListener(new View.OnClickListener() {
-//                    @Override
-//                    public void onClick(View v) {
-//
-//                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.getInstance());
-//                            builder.setTitle("Enter Text");
-//
-//// Set up the input
-//                            final EditText input = new EditText(MainActivity.getInstance());
-//// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
-//                            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL);
-//                            builder.setView(input);
-//
-//// Set up the buttons
-//                            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//                                @Override
-//                                public void onClick(DialogInterface dialog, int which) {
-//                                    CITY = input.getText().toString();
-//                                    write(CITY);
-//                                    finish();
-//                                    startActivity(getIntent());
-//
-//                                }
-//                            });
-//                            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-//                                @Override
-//                                public void onClick(DialogInterface dialog, int which) {
-//                                    dialog.cancel();
-//                                }
-//                            });
-//
-//                            builder.show();
-//
-//
-//                    }
-//                });
-//                updated_atTxt = findViewById(R.id.updated_at);
-//                statusTxt = findViewById(R.id.status);
-//                tempTxt = findViewById(R.id.temp);
-//                temp_minTxt = findViewById(R.id.temp_min);
-//                temp_maxTxt = findViewById(R.id.temp_max);
-//                sunriseTxt = findViewById(R.id.sunrise);
-//                sunsetTxt = findViewById(R.id.sunset);
-//                windTxt = findViewById(R.id.wind);
-//                pressureTxt = findViewById(R.id.pressure);
-//                humidityTxt = findViewById(R.id.humidity);
-//
-//                addressTxt.setText(address);
-//                updated_atTxt.setText(updatedAtText);
-//                statusTxt.setText(weatherDescription.toUpperCase());
-//                tempTxt.setText(temp);
-//                temp_minTxt.setText(list.get(position).getTempMin());
-//                temp_maxTxt.setText(list.get(position).getTempMax());
-//                sunriseTxt.setText(new SimpleDateFormat("hh:mm").format(new Date(list.get(position).getSunrise() * 1000)));
-//                sunsetTxt.setText(new SimpleDateFormat("hh:mm").format(new Date(list.get(position).getSunset() * 1000)));
-//                windTxt.setText(list.get(position).getWindSpeed());
-//                pressureTxt.setText(list.get(position).getPressure());
-//                humidityTxt.setText(list.get(position).getHumidity());
-               weatherList.add(new Weather(address, updatedAtText, temp, tempMin, tempMax, pressure, humidity, sunrise, sunset,windSpeed, weatherDescription));
-                sliderAdapter.notifyDataSetChanged();
-                /* Views populated, Hiding the loader, Showing the main design */
-                //findViewById(R.id.loader).setVisibility(View.GONE);
-                //findViewById(R.id.mainContainer).setVisibility(View.VISIBLE);
-
-
-            } catch (JSONException e) {
-                //findViewById(R.id.loader).setVisibility(View.GONE);
-                //findViewById(R.id.errorText).setVisibility(View.VISIBLE);
-            }
-
-        }
     }
 
     public void write(String input)
@@ -275,10 +310,164 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public boolean backround(Weather w){
-        if(w.getWeatherDescription().contains("clear")||w.getWeatherDescription().contains("light")||w.getWeatherDescription().contains("few")||w.getWeatherDescription().contains("moderate")){
+        if(w.getWeatherDescription().contains("clear")||w.getWeatherDescription().contains("light")||w.getWeatherDescription().contains("few")||w.getWeatherDescription().contains("moderate")||w.getWeatherDescription().contains("scattered")){
             return true;
         }
             return false;
 
+    }
+
+    public void add(boolean refresh)
+    {
+        if(refresh == false) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.getInstance());
+            builder.setTitle("Enter City");
+
+// Set up the input
+            final EditText input = new EditText(MainActivity.getInstance());
+// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL);
+            builder.setView(input);
+
+// Set up the buttons
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    CITY = input.getText().toString();
+
+                    GeoLocation geoLocation = new GeoLocation();
+                    geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler());
+
+
+                }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+
+            builder.show();
+        }
+
+    }
+
+
+    private class GeoHandler extends Handler {
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            String address;
+            switch (msg.what){
+                case 1:
+                    Bundle bundle = msg.getData();
+                    address = bundle.getString("adress");
+                    String[] latlon = address.split(";");
+                    newlat = Double.parseDouble(latlon[0]);
+                    newlot = Double.parseDouble(latlon[1]);
+                    String s = latlon[2];
+                    LocationTask lt = new LocationTask();
+                    lt.execute(String.valueOf(newlat),String.valueOf(newlot));
+
+//                    try {
+//                        String response = lt.get();
+//                        JSONObject jsonObject = new JSONObject(response);
+//                        try{s = jsonObject.getJSONObject("address").getString("suburb");}catch (Exception e){}
+//                        try{s = jsonObject.getJSONObject("address").getString("city");}catch (Exception e){}
+//                        try{s = jsonObject.getJSONObject("address").getString("town");}catch (Exception e){}
+//                        try{s = jsonObject.getJSONObject("address").getString("village");}catch (Exception e){}
+//
+//
+//                        GeoLocation geoLocation = new GeoLocation();
+//                      geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler() );
+//                    } catch (ExecutionException e) {
+//                        e.printStackTrace();
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    } catch (JSONException e) {
+//                        e.printStackTrace();
+//                    }
+                    weatherTask = new WeatherTask(s,sliderAdapter,weatherList,-1, weatherPlacesPerUserList);
+                    weatherTask.execute(String.valueOf(newlat),String.valueOf(newlot));
+                    Log.d(TAG, "handleMessage: Lat" + newlat + " lot " + newlot  );
+
+
+
+                    break;
+
+                default:
+                    address = null;
+                            break;
+
+
+            }
+        }
+    }
+
+    private void checkPermissionGPS() {
+        Log.d(TAG, "checkPermissionGPS");
+        String permission = Manifest.permission.ACCESS_FINE_LOCATION;
+        if (ActivityCompat.checkSelfPermission(this, permission)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{ permission },
+                    RQ_ACCESS_FINE_LOCATION );
+        } else {
+            LocationManager locationManager = (LocationManager)
+                    getSystemService(Context.LOCATION_SERVICE);
+
+            Location location = locationManager.getLastKnownLocation(
+                    LocationManager.GPS_PROVIDER);
+            int i = 0;
+            double lon = location.getLongitude();
+            double lat = location.getLatitude();
+            String sJson = "";
+            LocationTask lt = new LocationTask();
+            lt.execute(String.valueOf(lat),String.valueOf(lon));
+            try {
+                String response = lt.get();
+                JSONObject jsonObject = new JSONObject(response);
+
+                try{CITY = jsonObject.getJSONObject("address").getString("city");}catch (Exception e){}
+                try{CITY = jsonObject.getJSONObject("address").getString("town");}catch (Exception e){}
+                try{CITY = jsonObject.getJSONObject("address").getString("village");}catch (Exception e){}
+
+                GeoLocation geoLocation = new GeoLocation();
+                geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler() );
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != RQ_ACCESS_FINE_LOCATION) return;
+        if (grantResults.length > 0 &&
+                grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this,"Permission ACCESS_FINE_LOCATION denied!",Toast.LENGTH_SHORT);
+        } else {
+            gpsGranted();
+        }
+    }
+
+    private void gpsGranted() {
+        checkPermissionGPS();
+    }
+
+
+    public void writeListOnFirebase(List<WeatherPlacesPerUser>list, FirebaseAuth firebaseAuth){
+
+        Gson gson = new Gson();
+        WeatherPlacesPerUserListObject wppulo= new WeatherPlacesPerUserListObject(list);
+        mDatabase.child("1").setValue(gson.toJson(wppulo));
     }
 }
