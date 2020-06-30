@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager.widget.ViewPager;
@@ -30,6 +32,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.channels.Channel;
 import java.nio.file.Watchable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -43,19 +46,27 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.text.Html;
 import android.text.InputType;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -63,6 +74,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -73,7 +85,8 @@ public class MainActivity extends AppCompatActivity {
 
 
     private static final String TAG = "Main";
-    public List<Weather>weatherList = new ArrayList<>();
+    private static final String CHANNEL_ID = "Weather";
+    public List<Weather> weatherList = new ArrayList<>();
     SwipeRefreshLayout refreshLayout;
     String CITY;
     String API = "6e7126dd0d4a9044c59cdc3013a08c0f";
@@ -82,17 +95,19 @@ public class MainActivity extends AppCompatActivity {
     private static final int RQ_ACCESS_FINE_LOCATION = 123;
     private LinearLayout mDotLayout;
     private SliderAdapter sliderAdapter;
-    private  String filename = "cities";
+    private String filename = "cities";
     ImageButton btn_add;
     private double newlot;
     private double newlat;
     public WeatherTask weatherTask;
-    public List<WeatherPlacesPerUser>weatherPlacesPerUserList;
-private ImageButton btn_settings;
+    public List<WeatherPlacesPerUser> weatherPlacesPerUserList;
+    private ImageButton btn_settings;
     private static MainActivity sInstance = null;
-    TextView [] dots;
+    TextView[] dots;
     private FirebaseAuth mAuth;
     private DatabaseReference mDatabase;
+    private NotificationManagerCompat notificationManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,7 +122,7 @@ private ImageButton btn_settings;
         mAuth.getCurrentUser().getUid();
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         mDatabase = database.getReference("WeatherPlaces");
-
+        notificationManager = NotificationManagerCompat.from(this);
         sliderAdapter = new SliderAdapter(weatherList, this);
         mDotLayout = findViewById(R.id.dotsLayout);
         mSlideViewPager = findViewById(R.id.slideViewPager);
@@ -125,20 +140,19 @@ private ImageButton btn_settings;
 
             @Override
             public void onPageSelected(int position) {
-                if(position == 0){
+                if (position == 0) {
                     delete.setEnabled(false);
-                }else {
+                } else {
                     delete.setEnabled(true);
                 }
                 LinearLayout ll = findViewById(R.id.linearlayout);
-                if(backround(weatherList.get(position))) {
+                if (backround(weatherList.get(position))) {
 
                     ll.setBackgroundResource(R.drawable.gradient_day_nice);
-                }
-                else{
+                } else {
                     ll.setBackgroundResource(R.drawable.gradient_day_ugly);
                 }
-                if(weatherList.get(position).getSunset()-60*60*24 < java.time.Instant.now().getEpochSecond() && (weatherList.get(position).getSunrise()) > java.time.Instant.now().getEpochSecond()){
+                if (weatherList.get(position).getSunset() - 60 * 60 * 24 < java.time.Instant.now().getEpochSecond() && (weatherList.get(position).getSunrise()) > java.time.Instant.now().getEpochSecond()) {
                     ll.setBackgroundResource(R.drawable.gradient_night);
                 }
 
@@ -150,50 +164,80 @@ private ImageButton btn_settings;
             @Override
             public void onPageScrollStateChanged(int state) {
 
-            }});
+            }
+        });
 
         btn_add = findViewById(R.id.btn_add);
         btn_add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-            add(false);
+                add(false);
 
 
             }
         });
         checkPermissionGPS();
-//btn_settings.findViewById(R.id.btn_settings);
-//btn_settings.setOnClickListener(new View.OnClickListener() {
-//    @Override
-//    public void onClick(View v) {
-//
-//    }
-//});
-     //   Toolbar toolbar = findViewById(R.id.toolbar);
-   //     setSupportActionBar(toolbar);
-//       Button side_menu_Button = findViewById(R.id.main_side_button);
-//       side_menu_Button.setOnClickListener(view -> {
-//          ;
-//           Toast.makeText(MainActivity.getInstance(), "WIESO,", Toast.LENGTH_LONG ).show();
-//       });
+
+
+        btn_settings = findViewById(R.id.btn_settings);
+        btn_settings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                PopupMenu popupMenu = new PopupMenu(MainActivity.this, btn_settings);
+                popupMenu.getMenuInflater().inflate(R.menu.menu_main, popupMenu.getMenu());
+
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem menuItem) {
+                        switch (menuItem.getItemId()) {
+                            case R.id.action_settings:
+                                Intent intent = new Intent(MainActivity.this, MySettingsActivity.class);
+                                startActivityForResult(intent, 5);
+                                break;
+
+                            case R.id.action_logout:
+                                FirebaseAuth.getInstance().signOut();
+                                finish();
+                                startActivity(new Intent(MainActivity.this, EmailLoginActivity.class));
+                                break;
+                        }
+                        return true;
+                    }
+
+                });
+                popupMenu.show();
+            }
+
+        });
+
+
+
+      /*  Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+       Button side_menu_Button = findViewById(R.id.main_side_button);
+       side_menu_Button.setOnClickListener(view -> {
+          ;
+           Toast.makeText(MainActivity.getInstance(), "WIESO,", Toast.LENGTH_LONG ).show();*/
+        // });
 
 
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-if(weatherList.size() > 0){
-    weatherList.remove(mSlideViewPager.getCurrentItem());
-    WeatherPlacesPerUser weatherPlacesPerUser1 = weatherPlacesPerUserList.stream().filter(weatherPlacesPerUser -> mAuth.getCurrentUser().getUid().equals(weatherPlacesPerUser.getUid())).findFirst().orElse(null);
-    for (WeatherPlacesPerUser wppu:
-            weatherPlacesPerUserList) {
-        if(wppu.equals(weatherPlacesPerUser1)){
-            wppu.weatherplaces.remove(mSlideViewPager.getCurrentItem()-1);
-        }
-    }
-    sliderAdapter.notifyDataSetChanged();
+                if (weatherList.size() > 0) {
+                    weatherList.remove(mSlideViewPager.getCurrentItem());
+                    WeatherPlacesPerUser weatherPlacesPerUser1 = weatherPlacesPerUserList.stream().filter(weatherPlacesPerUser -> mAuth.getCurrentUser().getUid().equals(weatherPlacesPerUser.getUid())).findFirst().orElse(null);
+                    for (WeatherPlacesPerUser wppu :
+                            weatherPlacesPerUserList) {
+                        if (wppu.equals(weatherPlacesPerUser1)) {
+                            wppu.weatherplaces.remove(mSlideViewPager.getCurrentItem() - 1);
+                        }
+                    }
+                    sliderAdapter.notifyDataSetChanged();
 
-}
+                }
                 Log.d(TAG, "onClick: removed " + mSlideViewPager.getCurrentItem());
             }
         });
@@ -203,16 +247,14 @@ if(weatherList.size() > 0){
             @Override
             public void onRefresh() {
 
-                if(weatherList.size() > 0 ) {
-                    weatherTask = new WeatherTask(weatherList.get(mSlideViewPager.getCurrentItem()).getAddress(),sliderAdapter,weatherList,mSlideViewPager.getCurrentItem(),weatherPlacesPerUserList);
-                    weatherTask.execute(String.valueOf(newlat),String.valueOf(newlot));
+                if (weatherList.size() > 0) {
+                    weatherTask = new WeatherTask(weatherList.get(mSlideViewPager.getCurrentItem()).getAddress(), sliderAdapter, weatherList, mSlideViewPager.getCurrentItem(), weatherPlacesPerUserList);
+                    weatherTask.execute(String.valueOf(newlat), String.valueOf(newlot));
 
                 }
 
 
                 refreshLayout.setRefreshing(false);
-
-
 
 
             }
@@ -221,13 +263,13 @@ if(weatherList.size() > 0){
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 weatherPlacesPerUserList.clear();
-                for(DataSnapshot dataSnapshot1: dataSnapshot.getChildren()){
+                for (DataSnapshot dataSnapshot1 : dataSnapshot.getChildren()) {
                     String json = dataSnapshot1.getValue(String.class);
                     Gson gson = new Gson();
-                    WeatherPlacesPerUserListObject weatherPlacesPerUserListObject= gson.fromJson(json, WeatherPlacesPerUserListObject.class);
+                    WeatherPlacesPerUserListObject weatherPlacesPerUserListObject = gson.fromJson(json, WeatherPlacesPerUserListObject.class);
                     weatherPlacesPerUserList = weatherPlacesPerUserListObject.getList();
                 }
-                if(weatherList.size()==1) {
+                if (weatherList.size() == 1) {
                     WeatherPlacesPerUser weatherPlacesPerUser1 = weatherPlacesPerUserList.stream().filter(weatherPlacesPerUser -> mAuth.getCurrentUser().getUid().equals(weatherPlacesPerUser.getUid())).findFirst().orElse(null);
                     if (weatherPlacesPerUser1 != null) {
                         for (String s : weatherPlacesPerUser1.getWeatherplaces()) {
@@ -244,12 +286,48 @@ if(weatherList.size() > 0){
             }
         });
 
-  }
+
+    /*    btn_settings = findViewById(R.id.btn_settings);
+        btn_settings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, MySettingsActivity.class);
+                startActivityForResult(intent, 5);
+            }
+        });*/
+
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                Intent intent = new Intent(MainActivity.this, MySettingsActivity.class);
+                startActivityForResult(intent, 5);
+                break;
+
+            case R.id.action_logout:
+                FirebaseAuth.getInstance().signOut();
+                finish();
+                startActivity(new Intent(this, EmailLoginActivity.class));
+                break;
+        }
+        return true;
+    }
+
     @Override
     protected void onStop() {
         // call the superclass method first
         super.onStop();
-        writeListOnFirebase(weatherPlacesPerUserList,mAuth);
+        writeListOnFirebase(weatherPlacesPerUserList, mAuth);
     }
 
     public static MainActivity getInstance() {
@@ -261,11 +339,10 @@ if(weatherList.size() > 0){
 
     }
 
-    public void write(String input)
-    {
+    public void write(String input) {
 
         try {
-            FileOutputStream fos = openFileOutput(filename, MODE_PRIVATE );
+            FileOutputStream fos = openFileOutput(filename, MODE_PRIVATE);
             PrintWriter out = new PrintWriter(new OutputStreamWriter(fos));
             out.println(input);
             out.flush();
@@ -275,15 +352,16 @@ if(weatherList.size() > 0){
         }
 
 
-        }
-    public String readin(){
+    }
+
+    public String readin() {
         String mFileContent = "vienna,AT";
         try {
             FileInputStream fis = openFileInput(filename);
             BufferedReader in = new BufferedReader(new InputStreamReader(fis));
             String line;
             StringBuffer buffer = new StringBuffer();
-            while ((line = in.readLine()) != null ) {
+            while ((line = in.readLine()) != null) {
                 buffer.append(line);
             }
             mFileContent = buffer.toString();
@@ -293,33 +371,33 @@ if(weatherList.size() > 0){
         }
         return mFileContent;
     }
-    public void dotIndicator(int position){
+
+    public void dotIndicator(int position) {
         mDotLayout.removeAllViews();
         dots = new TextView[weatherList.size()];
-        for(int i =0; i < dots.length; i++){
-            dots[i] =  new TextView(getApplicationContext());
+        for (int i = 0; i < dots.length; i++) {
+            dots[i] = new TextView(getApplicationContext());
             dots[i].setText(Html.fromHtml("&#8226"));
             dots[i].setTextSize(35);
             dots[i].setTextColor(getResources().getColor(R.color.base));
             mDotLayout.addView(dots[i]);
         }
 
-        if(dots.length > 0){
+        if (dots.length > 0) {
             dots[position].setTextColor(getResources().getColor(R.color.white));
         }
     }
 
-    public boolean backround(Weather w){
-        if(w.getWeatherDescription().contains("clear")||w.getWeatherDescription().contains("light")||w.getWeatherDescription().contains("few")||w.getWeatherDescription().contains("moderate")||w.getWeatherDescription().contains("scattered")){
+    public boolean backround(Weather w) {
+        if (w.getWeatherDescription().contains("clear") || w.getWeatherDescription().contains("light") || w.getWeatherDescription().contains("few") || w.getWeatherDescription().contains("moderate") || w.getWeatherDescription().contains("scattered")) {
             return true;
         }
-            return false;
+        return false;
 
     }
 
-    public void add(boolean refresh)
-    {
-        if(refresh == false) {
+    public void add(boolean refresh) {
+        if (refresh == false) {
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.getInstance());
             builder.setTitle("Enter City");
 
@@ -358,7 +436,7 @@ if(weatherList.size() > 0){
         @Override
         public void handleMessage(@NonNull Message msg) {
             String address;
-            switch (msg.what){
+            switch (msg.what) {
                 case 1:
                     Bundle bundle = msg.getData();
                     address = bundle.getString("adress");
@@ -367,7 +445,7 @@ if(weatherList.size() > 0){
                     newlot = Double.parseDouble(latlon[1]);
                     String s = latlon[2];
                     LocationTask lt = new LocationTask();
-                    lt.execute(String.valueOf(newlat),String.valueOf(newlot));
+                    lt.execute(String.valueOf(newlat), String.valueOf(newlot));
 
 //                    try {
 //                        String response = lt.get();
@@ -387,17 +465,16 @@ if(weatherList.size() > 0){
 //                    } catch (JSONException e) {
 //                        e.printStackTrace();
 //                    }
-                    weatherTask = new WeatherTask(s,sliderAdapter,weatherList,-1, weatherPlacesPerUserList);
-                    weatherTask.execute(String.valueOf(newlat),String.valueOf(newlot));
-                    Log.d(TAG, "handleMessage: Lat" + newlat + " lot " + newlot  );
-
+                    weatherTask = new WeatherTask(s, sliderAdapter, weatherList, -1, weatherPlacesPerUserList);
+                    weatherTask.execute(String.valueOf(newlat), String.valueOf(newlot));
+                    Log.d(TAG, "handleMessage: Lat" + newlat + " lot " + newlot);
 
 
                     break;
 
                 default:
                     address = null;
-                            break;
+                    break;
 
 
             }
@@ -410,8 +487,8 @@ if(weatherList.size() > 0){
         if (ActivityCompat.checkSelfPermission(this, permission)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
-                    new String[]{ permission },
-                    RQ_ACCESS_FINE_LOCATION );
+                    new String[]{permission},
+                    RQ_ACCESS_FINE_LOCATION);
         } else {
             LocationManager locationManager = (LocationManager)
                     getSystemService(Context.LOCATION_SERVICE);
@@ -419,21 +496,30 @@ if(weatherList.size() > 0){
             Location location = locationManager.getLastKnownLocation(
                     LocationManager.GPS_PROVIDER);
             int i = 0;
-            double lon = location.getLongitude();
-            double lat = location.getLatitude();
+            double lon = 5;
+            double lat = 6;
             String sJson = "";
             LocationTask lt = new LocationTask();
-            lt.execute(String.valueOf(lat),String.valueOf(lon));
+            lt.execute(String.valueOf(lat), String.valueOf(lon));
             try {
                 String response = lt.get();
                 JSONObject jsonObject = new JSONObject(response);
 
-                try{CITY = jsonObject.getJSONObject("address").getString("city");}catch (Exception e){}
-                try{CITY = jsonObject.getJSONObject("address").getString("town");}catch (Exception e){}
-                try{CITY = jsonObject.getJSONObject("address").getString("village");}catch (Exception e){}
+                try {
+                    CITY = jsonObject.getJSONObject("address").getString("city");
+                } catch (Exception e) {
+                }
+                try {
+                    CITY = jsonObject.getJSONObject("address").getString("town");
+                } catch (Exception e) {
+                }
+                try {
+                    CITY = jsonObject.getJSONObject("address").getString("village");
+                } catch (Exception e) {
+                }
 
                 GeoLocation geoLocation = new GeoLocation();
-                geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler() );
+                geoLocation.getAddress(CITY, getApplicationContext(), new GeoHandler());
             } catch (ExecutionException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
@@ -453,7 +539,7 @@ if(weatherList.size() > 0){
         if (requestCode != RQ_ACCESS_FINE_LOCATION) return;
         if (grantResults.length > 0 &&
                 grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this,"Permission ACCESS_FINE_LOCATION denied!",Toast.LENGTH_SHORT);
+            Toast.makeText(this, "Permission ACCESS_FINE_LOCATION denied!", Toast.LENGTH_SHORT);
         } else {
             gpsGranted();
         }
@@ -464,10 +550,12 @@ if(weatherList.size() > 0){
     }
 
 
-    public void writeListOnFirebase(List<WeatherPlacesPerUser>list, FirebaseAuth firebaseAuth){
+    public void writeListOnFirebase(List<WeatherPlacesPerUser> list, FirebaseAuth firebaseAuth) {
 
         Gson gson = new Gson();
-        WeatherPlacesPerUserListObject wppulo= new WeatherPlacesPerUserListObject(list);
+        WeatherPlacesPerUserListObject wppulo = new WeatherPlacesPerUserListObject(list);
         mDatabase.child("1").setValue(gson.toJson(wppulo));
     }
+
+
 }
