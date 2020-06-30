@@ -94,13 +94,13 @@ Presentation; 23.06
 | schedule in hours | Niklas | Benjamin |
 | :---         |     :---:      |          ---: |
 | Github init   | 2     | 2    |
-| Design Login/Register   | 3     | 4    |
-| Firebase Init     | 1       | 2      |
-| Implement Login/Register     | 3       |  2     |
-| Design Main     | -1       | -1      |
-| Api implemetation     | -1       | -1      |
-| Bug fixing     | -1       | -1      |
-| Gesamt     | -1       | -1      |-1|
+| Design Login/Register   | 5     | 7    |
+| Firebase Init     | 11       | 13      |
+| Implement Login/Register     | 7       |  6     |
+| Design Main     | 5       | 7     |
+| Api implemetation     | 8      | 7      |
+| Bug fixing     | 5       | 5     |
+| Gesamt     | 43       | 47     |100|
 
 # Prototype
 
