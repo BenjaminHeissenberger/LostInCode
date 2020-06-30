@@ -78,7 +78,7 @@
 
                 android:layout_weight="0"
                 android:background="@android:color/transparent"
-                android:tint="@color/iron"
+                android:tint="@color/accent"
                 app:srcCompat="@android:drawable/ic_menu_delete" />
 
             <ImageButton
@@ -99,13 +99,13 @@
     <androidx.viewpager.widget.ViewPager
         android:id="@+id/slideViewPager"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="660dp">
+    </androidx.viewpager.widget.ViewPager>
 
-    <LinearLayout
-        android:id="@+id/dotsLayout"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:gravity="center_horizontal"
-        android:orientation="horizontal"></LinearLayout>
+        <LinearLayout
+            android:id="@+id/dotsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal"></LinearLayout>
 </LinearLayout>
-

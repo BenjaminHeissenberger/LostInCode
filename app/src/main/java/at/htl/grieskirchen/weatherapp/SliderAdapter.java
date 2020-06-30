@@ -3,6 +3,7 @@ package at.htl.grieskirchen.weatherapp;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 public class SliderAdapter extends PagerAdapter {
     private Context context;
@@ -48,6 +50,23 @@ public class SliderAdapter extends PagerAdapter {
         TextView updated_atTxt = view.findViewById(R.id.updated_at);
         TextView statusTxt = view.findViewById(R.id.status);
         TextView tempTxt = view.findViewById(R.id.temp);
+        tempTxt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SimpleWeatherTask swt = new SimpleWeatherTask();
+                Weather w = list.get(position);
+                swt.execute(String.valueOf(w.getLat()),String.valueOf(w.getLon()));
+                try {
+                    Intent intent = new Intent(context, DetailedView.class);
+                    intent.putExtra("json", swt.get());
+                    context.startActivity(intent);
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
         TextView temp_minTxt = view.findViewById(R.id.temp_min);
         TextView temp_maxTxt = view.findViewById(R.id.temp_max);
         TextView sunriseTxt = view.findViewById(R.id.sunrise);

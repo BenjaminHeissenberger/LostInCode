@@ -23,6 +23,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".DetailedView"
+            android:theme="@style/AppTheme.Dark"></activity>
         <activity
             android:name=".MainActivity"
             android:theme="@style/AppTheme.Dark" />

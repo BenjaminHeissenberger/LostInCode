@@ -83,17 +83,15 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout mDotLayout;
     private SliderAdapter sliderAdapter;
     private  String filename = "cities";
-    ImageButton btn_add;
-    private double newlot;
-    private double newlat;
-    public WeatherTask weatherTask;
-    public List<WeatherPlacesPerUser>weatherPlacesPerUserList;
-private ImageButton btn_settings;
-    private static MainActivity sInstance = null;
-    TextView [] dots;
     private FirebaseAuth mAuth;
     private DatabaseReference mDatabase;
-
+    private static MainActivity sInstance = null;
+    private List<WeatherPlacesPerUser>weatherPlacesPerUserList;
+    private ImageButton btn_add;
+    WeatherTask weatherTask;
+    double newlat;
+    double newlot;
+    TextView [] dots;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -107,7 +105,7 @@ private ImageButton btn_settings;
         mAuth.getCurrentUser().getUid();
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         mDatabase = database.getReference("WeatherPlaces");
-
+        btn_add = findViewById(R.id.btn_add);
         sliderAdapter = new SliderAdapter(weatherList, this);
         mDotLayout = findViewById(R.id.dotsLayout);
         mSlideViewPager = findViewById(R.id.slideViewPager);
@@ -120,7 +118,18 @@ private ImageButton btn_settings;
         mSlideViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                if(position == 0){
+                    LinearLayout ll = findViewById(R.id.linearlayout);
+                    if(backround(weatherList.get(position))) {
 
+                        ll.setBackgroundResource(R.drawable.gradient_day_nice);
+                    }
+                    else{
+                        ll.setBackgroundResource(R.drawable.gradient_day_ugly);
+                    }
+                    if(weatherList.get(position).getSunset()-60*60*24 < java.time.Instant.now().getEpochSecond() && (weatherList.get(position).getSunrise()) > java.time.Instant.now().getEpochSecond()){
+                        ll.setBackgroundResource(R.drawable.gradient_night);
+                    }}
             }
 
             @Override
@@ -142,7 +151,6 @@ private ImageButton btn_settings;
                     ll.setBackgroundResource(R.drawable.gradient_night);
                 }
 
-                dotIndicator(position);
 
 
             }
@@ -157,7 +165,7 @@ private ImageButton btn_settings;
             @Override
             public void onClick(View v) {
 
-            add(false);
+                add(false);
 
 
             }
