@@ -99,8 +99,8 @@ Presentation; 23.06
 | Implement Login/Register     | 7       |  6     |
 | Design Main     | 5       | 7     |
 | Api implemetation     | 8      | 7      |
-| Bug fixing     | 5       | 5     |
-| Gesamt     | 43       | 47     |100|
+| Bug fixing     | 7       | 5     |
+| Gesamt     | 45       | 47     |100|
 
 # Prototype
 
